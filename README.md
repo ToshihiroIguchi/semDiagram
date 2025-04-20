@@ -50,7 +50,7 @@ You can start it by accessing the following URL with a browser. `localhost` can 
 ```
 MIT License
 
-Copyright (c) 2020 Toshihiro Iguchi
+Copyright (c) 2025 Toshihiro Iguchi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

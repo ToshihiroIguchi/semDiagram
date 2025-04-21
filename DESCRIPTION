@@ -1,0 +1,19 @@
+Package: semDiagram
+Type: Package
+Title: Visualize SEM Models and Extract Fit Indices
+Version: 0.1.0
+Date: 2025-04-21
+Authors@R: person("Toshihiro", "Iguchi", email = "your_email@example.com", role = c("aut", "cre"))
+Description: Provides functions to extract fit indices from 'lavaan' SEM models and visualize them using 'DiagrammeR'. Includes color-coded fit indices and customizable path diagrams.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 3.5.0)
+Imports:
+    lavaan,
+    DiagrammeR,
+    scales
+Suggests:
+    knitr,
+    rmarkdown
+RoxygenNote: 7.3.0

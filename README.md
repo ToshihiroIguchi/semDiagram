@@ -56,4 +56,3 @@ summary(fit, standardized = TRUE)
 semDiagram(fit)
 ```
 ![path](sample.png)
-

@@ -1,19 +1,23 @@
-
-
-# lavaan と DiagrammeR, scales パッケージを利用した SEM 図と適合度指標の表示関数
-semDiagram <- function(fitted_model, digits = 3,
+semDiagram <- function(fitted_model,
+                       digits = 3,
+                       standardized = TRUE,
+                       alpha = 0.05,
                        min_width = 1, max_width = 5,
-                       pos_color = "#1f78b4", neg_color = "#e41a1c") {
-
+                       pos_color = "#1f78b4", neg_color = "#e41a1c",
+                       fontname = "Helvetica", node_fontsize = 11) {
+  if (!inherits(fitted_model, "lavaan")) {
+    stop("The argument 'fitted_model' must be a lavaan model object.")
+  }
   if (!requireNamespace("scales", quietly = TRUE)) install.packages("scales")
   if (!requireNamespace("DiagrammeR", quietly = TRUE)) install.packages("DiagrammeR")
   library(scales)
   library(DiagrammeR)
 
-  params <- parameterEstimates(fitted_model)
+  # パラメータ推定値の取得
+  params <- parameterEstimates(fitted_model, standardized = standardized)
   fit <- fitMeasures(fitted_model)
 
-  # 色を決める関数（条件を満たしたら赤）
+  # 色を決める関数
   colorize <- function(value, threshold, comp = "<=", inverse = FALSE) {
     if (inverse) {
       if (value > threshold) "red" else "gray20"
@@ -22,7 +26,7 @@ semDiagram <- function(fitted_model, digits = 3,
     }
   }
 
-  # 指標ごとの色付け（判定基準は一般的なSEMの基準）
+  # 適合度指標ごとの色
   p_col    <- colorize(fit["pvalue"], 0.05)
   srmr_col <- colorize(fit["srmr"], 0.08, inverse = TRUE)
   rmsea_col<- colorize(fit["rmsea"], 0.08, inverse = TRUE)
@@ -30,11 +34,8 @@ semDiagram <- function(fitted_model, digits = 3,
   gfi_col  <- colorize(fit["gfi"], 0.90)
   agfi_col <- colorize(fit["agfi"], 0.90)
   nfi_col  <- colorize(fit["nfi"], 0.90)
+  aic_str  <- sprintf("AIC = %.1f", fit["aic"])
 
-  # AICは情報量なので色付けしない
-  aic_str <- sprintf("AIC = %.1f", fit["aic"])
-
-  # HTMLラベル（Graphviz形式）で横並び＆色付き
   fit_label <- paste0(
     "<",
     sprintf("<FONT COLOR='%s'>p = %.3f</FONT>", p_col, fit["pvalue"]),
@@ -56,14 +57,14 @@ semDiagram <- function(fitted_model, digits = 3,
     list(shape = ifelse(var %in% latent_vars, "ellipse", "box"), label = var)
   }), all_vars)
 
-
   # エッジ定義
   edges <- list()
   for (i in seq_len(nrow(params))) {
     p <- params[i, ]
     if (p$op %in% c("=~", "~", "~~") && p$lhs != p$rhs) {
       penwidth <- abs(p$est) * (max_width - min_width) + min_width
-      color    <- ifelse(p$est >= 0, pos_color, neg_color)
+      alpha_level <- ifelse(p$pvalue < alpha, 1, 0.3)
+      color <- scales::alpha(ifelse(p$est >= 0, pos_color, neg_color), alpha_level)
       edge_def <- switch(p$op,
                          "=~" = list(from = p$lhs, to = p$rhs, arrowhead = "normal"),
                          "~"  = list(from = p$rhs, to = p$lhs, arrowhead = "normal"),
@@ -75,13 +76,12 @@ semDiagram <- function(fitted_model, digits = 3,
     }
   }
 
-  # Graphvizコード生成（HTMLラベル対応）
   graph_code <- paste0(
     "digraph {\n",
     "  rankdir = LR;\n",
-    "  graph [overlap=false, fontsize=11, labelloc=\"t\", labeljust=\"c\", label=", fit_label, "];\n",
-    "  node [fontname=Helvetica, width=1.5, height=0.8];\n",
-    "  edge [fontname=Helvetica, fontcolor='#333333'];\n",
+    "  graph [overlap=false, fontsize=", node_fontsize, ", labelloc=\"t\", labeljust=\"c\", label=", fit_label, "];\n",
+    "  node [fontname=\"", fontname, "\", width=1.5, height=0.8];\n",
+    "  edge [fontname=\"", fontname, "\", fontcolor='#333333'];\n",
     paste(sapply(names(nodes), function(n) {
       sprintf("  %s [shape=%s, label=\"%s\"];", n, nodes[[n]]$shape, nodes[[n]]$label)
     }), collapse = "\n"), "\n",

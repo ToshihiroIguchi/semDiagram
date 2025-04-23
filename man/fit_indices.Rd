@@ -34,3 +34,4 @@ model <- ' visual  =~ x1 + x2 + x3
 fit <- cfa(model, data = HolzingerSwineford1939)
 fit_indices(fit)
 }
+\author{Toshihiro Iguchi}

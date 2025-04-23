@@ -58,7 +58,7 @@ print(equations)
   \code{\link[lavaan]{parameterEstimates}}, \code{\link[lavaan]{standardizedSolution}}, \code{\link[lavaan]{sem}}, \code{\link[lavaan]{cfa}}
 }
 \author{
-  Your Name
+  Toshihiro Iguchi
 }
 \keyword{sem}
 \keyword{lavaan}

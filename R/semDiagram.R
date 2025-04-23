@@ -53,8 +53,9 @@ semDiagram <- function(fitted_model, digits = 3,
 
   # ノード定義
   nodes <- setNames(lapply(all_vars, function(var) {
-    list(shape = ifelse(var %in% latent_vars, "box", "ellipse"), label = var)
+    list(shape = ifelse(var %in% latent_vars, "ellipse", "box"), label = var)
   }), all_vars)
+
 
   # エッジ定義
   edges <- list()
@@ -64,7 +65,7 @@ semDiagram <- function(fitted_model, digits = 3,
       penwidth <- abs(p$est) * (max_width - min_width) + min_width
       color    <- ifelse(p$est >= 0, pos_color, neg_color)
       edge_def <- switch(p$op,
-                         "=~" = list(from = p$lhs, to = p$rhs, arrowhead = "odot"),
+                         "=~" = list(from = p$lhs, to = p$rhs, arrowhead = "normal"),
                          "~"  = list(from = p$rhs, to = p$lhs, arrowhead = "normal"),
                          "~~" = list(from = p$lhs, to = p$rhs, arrowhead = "none", dir = "both", style = "dashed"))
       edge_def$label    <- sprintf("%.*f", digits, p$est)

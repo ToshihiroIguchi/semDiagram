@@ -80,7 +80,7 @@ semDiagram <- function(fitted_model,
     "digraph {\n",
     "  rankdir = LR;\n",
     "  graph [overlap=false, fontsize=", node_fontsize, ", labelloc=\"t\", labeljust=\"c\", label=", fit_label, "];\n",
-    "  node [fontname=\"", fontname, "\", width=1.5, height=0.8];\n",
+    "  node [fontname=\"", fontname, "\", margin=0.02];\n",
     "  edge [fontname=\"", fontname, "\", fontcolor='#333333'];\n",
     paste(sapply(names(nodes), function(n) {
       sprintf("  %s [shape=%s, label=\"%s\"];", n, nodes[[n]]$shape, nodes[[n]]$label)

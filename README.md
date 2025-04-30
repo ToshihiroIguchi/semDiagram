@@ -15,7 +15,7 @@ R functions for visualizing structural equation models (SEM) with fit indices an
 install.packages(c("lavaan", "DiagrammeR", "scales"))
 
 # Load functions
-source("semDiagram.R")
+devtools::install_github("ToshihiroIguchi/semDiagram")
 ```
 
 ## Examples

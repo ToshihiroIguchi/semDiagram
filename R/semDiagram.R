@@ -1,3 +1,51 @@
+#' Visualize SEM Results as a Path Diagram
+#'
+#' The semDiagram function visualizes structural equation modeling (SEM) results as a path diagram using the DiagrammeR package.
+#'
+#' @param fitted_model An object of class \code{lavaan}, representing the SEM model fit.
+#' @param digits An integer specifying the number of digits for parameter estimates in the diagram.
+#' @param standardized Logical. Whether to use standardized estimates. Defaults to \code{TRUE}.
+#' @param alpha Significance level for coloring edges based on p-values. Defaults to 0.05.
+#' @param min_width Minimum width of edges in the diagram. Defaults to 1.
+#' @param max_width Maximum width of edges in the diagram. Defaults to 5.
+#' @param pos_color Color for positive parameter estimates. Defaults to \code{"blue"}.
+#' @param neg_color Color for negative parameter estimates. Defaults to \code{"red"}.
+#' @param fontname Font family to use in the diagram. Defaults to \code{"Helvetica"}.
+#' @param node_fontsize Font size for node labels. Defaults to 11.
+#' @param edge_fontsize Font size for edge labels. Defaults to 9.
+#' @param show_residuals Logical. Whether to display residual variances as separate nodes. Defaults to \code{FALSE}.
+#' @param show_intercepts Logical. Whether to display intercepts as separate nodes. Defaults to \code{FALSE}.
+#' @param show_fit Logical. Whether to display model fit indices. Defaults to \code{TRUE}.
+#' @param layout Layout direction of the diagram. Options include \code{"LR"} (left-to-right) and \code{"TB"} (top-to-bottom). Defaults to \code{"LR"}.
+#' @param curvature Curvature of bidirectional edges (for covariances). Defaults to 0.3.
+#'
+#' @return A path diagram generated using the DiagrammeR package.
+#'
+#' @details
+#' This function creates a path diagram for an SEM model fitted with the \code{lavaan} package.
+#' It provides customizable options for edge thickness, colors, font sizes, as well as the ability to display residual variances,
+#' intercepts, and model fit indices.
+#'
+#' @examples
+#' \dontrun{
+#' library(lavaan)
+#' library(DiagrammeR)
+#'
+#' # Example SEM model
+#' model <- '
+#'   Latent1 =~ x1 + x2 + x3
+#'   Latent2 =~ y1 + y2 + y3
+#'   Latent2 ~ Latent1
+#' '
+#' fit <- sem(model, data = HolzingerSwineford1939)
+#'
+#' # Visualize the SEM results
+#' semDiagram(fitted_model = fit, standardized = TRUE, show_fit = TRUE)
+#' }
+#'
+#' @seealso \code{\link[lavaan]{lavaan}}, \code{\link[DiagrammeR]{grViz}}
+#'
+#' @export
 semDiagram <- function(fitted_model,
                        digits = 3,
                        standardized = TRUE,

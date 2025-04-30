@@ -1,59 +1,60 @@
 \name{semDiagram}
 \alias{semDiagram}
-\title{Draw SEM Diagrams with Fit Indices Using lavaan and DiagrammeR}
+\title{Visualize Structural Equation Models as Diagrams}
 \description{
-  This function visualizes structural equation models (SEM) estimated using \code{lavaan}.
-  It uses \code{DiagrammeR} to draw the path diagram and \code{scales} to manage edge color transparency.
-  Fit indices are also displayed at the top of the graph with color-coded evaluation.
+  This function visualizes a structural equation model (SEM) fitted by the \code{lavaan} package using the \code{DiagrammeR} package. It includes latent and observed variables, standardized coefficients, significance-based edge transparency, and optional residuals, intercepts, and fit indices.
 }
 \usage{
 semDiagram(fitted_model,
            digits = 3,
            standardized = TRUE,
            alpha = 0.05,
-           min_width = 1,
-           max_width = 5,
-           pos_color = "#1f78b4",
-           neg_color = "#e41a1c",
+           min_width = 1, max_width = 5,
+           pos_color = "blue", neg_color = "red",
            fontname = "Helvetica",
-           node_fontsize = 11)
+           node_fontsize = 11,
+           edge_fontsize = 9,
+           show_residuals = FALSE,
+           show_intercepts = TRUE,
+           show_fit = TRUE,
+           layout = "LR",
+           curvature = 0.3)
 }
 \arguments{
-  \item{fitted_model}{A model object fitted using \code{lavaan::sem()} or related functions.}
-  \item{digits}{Number of digits to round edge labels. Default is 3.}
+  \item{fitted_model}{A fitted \code{lavaan} model object.}
+  \item{digits}{Number of digits to round edge labels (default is 3).}
   \item{standardized}{Logical. If \code{TRUE}, standardized estimates are used.}
-  \item{alpha}{Significance level used to determine edge transparency. Default is 0.05.}
-  \item{min_width}{Minimum edge width.}
-  \item{max_width}{Maximum edge width.}
-  \item{pos_color}{Edge color for positive estimates.}
-  \item{neg_color}{Edge color for negative estimates.}
-  \item{fontname}{Font name used in nodes and edges.}
-  \item{node_fontsize}{Font size used in the graph.}
-}
-\details{
-  The function uses Graphviz via \code{DiagrammeR::grViz} to draw a structural equation model (SEM) diagram.
-  Latent variables are displayed as ellipses, and observed variables as boxes.
-  Edge color and transparency reflect the sign and statistical significance of path coefficients.
-  Fit indices such as RMSEA, SRMR, CFI, GFI, etc. are shown at the top of the diagram with threshold-based color coding.
+  \item{alpha}{Significance threshold for edge transparency.}
+  \item{min_width}{Minimum edge width for smallest effect.}
+  \item{max_width}{Maximum edge width for largest effect.}
+  \item{pos_color}{Color for positive coefficients.}
+  \item{neg_color}{Color for negative coefficients.}
+  \item{fontname}{Font name used in the diagram.}
+  \item{node_fontsize}{Font size for node labels.}
+  \item{edge_fontsize}{Font size for edge labels.}
+  \item{show_residuals}{Logical. If \code{TRUE}, residual variances are shown.}
+  \item{show_intercepts}{Logical. If \code{TRUE}, intercepts are shown.}
+  \item{show_fit}{Logical. If \code{TRUE}, model fit indices are displayed.}
+  \item{layout}{Graph layout direction. One of \code{"LR"}, \code{"TB"}, etc.}
+  \item{curvature}{Not used currently. Reserved for future curvature options.}
 }
 \value{
-  A \code{grViz} object that renders the diagram in an interactive R environment.
+  A graph object rendered by \code{DiagrammeR::grViz}, showing the SEM diagram.
 }
-\examples{
-# Load example data
-library(lavaan)
-model <- '
-  visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9
-  visual ~ textual + speed
-'
-fit <- sem(model, data = HolzingerSwineford1939)
-
-# Draw standardized SEM diagram
-semDiagram(fit, standardized = TRUE)
+\details{
+  This function checks for required packages and installs any missing ones. It extracts parameter estimates and fit measures from a \code{lavaan} model and constructs a diagram using GraphViz. Edge width represents effect size, transparency indicates significance, and colors show sign.
 }
 \seealso{
-  \code{\link[lavaan]{sem}}, \code{\link[DiagrammeR]{grViz}}, \code{\link[scales]{alpha}}
+  \code{\link[lavaan]{lavaan}}, \code{\link[DiagrammeR]{grViz}}
+}
+\examples{
+\dontrun{
+library(lavaan)
+model <- ' visual  =~ x1 + x2 + x3
+           textual =~ x4 + x5 + x6
+           speed   =~ x7 + x8 + x9 '
+fit <- cfa(model, data = HolzingerSwineford1939)
+semDiagram(fit)
+}
 }
 \author{Toshihiro Iguchi}

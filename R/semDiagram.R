@@ -8,7 +8,7 @@ semDiagram <- function(fitted_model,
                        node_fontsize = 11,
                        edge_fontsize = 9,
                        show_residuals = FALSE,
-                       show_intercepts = TRUE,
+                       show_intercepts = FALSE,
                        show_fit = TRUE,
                        layout = "LR",
                        curvature = 0.3) {
@@ -54,7 +54,7 @@ semDiagram <- function(fitted_model,
     cfi_col  <- colorize(fit["cfi"], 0.90)
 
     fit_label <- paste0(
-      "<<font point-size='12'><b>Model Fit Indices</b><br/>",
+      "<<font point-size='12'>",
       sprintf("<font color='%s'>p = %.3f</font>", p_col, fit["pvalue"]), " | ",
       sprintf("<font color='%s'>SRMR = %.3f</font>", s_col, fit["srmr"]), " | ",
       sprintf("<font color='%s'>RMSEA = %.3f</font>", r_col, fit["rmsea"]), " | ",
@@ -71,8 +71,12 @@ semDiagram <- function(fitted_model,
   }
 
   # ノードの定義
-  latent_vars <- unique(params$lhs[params$op == "=~"])
-  observed_vars <- setdiff(unique(c(params$lhs, params$rhs)), latent_vars)
+  # まず、各変数名を文字列として扱う
+  latent_vars <- unique(as.character(params$lhs[params$op == "=~"]))
+  observed_vars <- unique(as.character(c(params$lhs, params$rhs)))
+
+  # "1"（およびもしあれば空文字列）や latent_vars を除外する
+  observed_vars <- setdiff(observed_vars, c(latent_vars, "1", ""))
 
   nodes <- list()
 
@@ -94,8 +98,7 @@ semDiagram <- function(fitted_model,
       shape = "box",
       label = ov,
       fontname = fontname,
-      fontsize = node_fontsize,
-      margin = "0.05,0.05"
+      fontsize = node_fontsize
     )
   }
 
@@ -174,24 +177,30 @@ semDiagram <- function(fitted_model,
   }
 
   # 切片の表示
+  # 切片の表示（個別表示版: ノードは定型ラベル「1」、エッジに推定値を表示）
   if (show_intercepts) {
     ints <- params[params$op == "~1", ]
     if (nrow(ints) > 0) {
-      nodes[["1"]] <- list(
-        shape = "triangle",
-        label = "1",
-        style = "filled",
-        fillcolor = "#DDDDDD",
-        fontname = fontname,
-        fontsize = node_fontsize,
-        width = 0.3,
-        height = 0.3
-      )
-
       for (i in seq_len(nrow(ints))) {
         p <- ints[i, ]
+        # 各切片ノードのIDはユニークになるように "int_" + 変数名
+        node_id <- paste0("int_", p$lhs)
+
+        # 個別の切片ノードを作成（ラベルは定型ラベル "1"）
+        nodes[[node_id]] <- list(
+          shape = "triangle",
+          label = "1",
+          style = "filled",
+          fillcolor = "#DDDDDD",
+          fontname = fontname,
+          fontsize = node_fontsize * 0.5,
+          width = 0,
+          height = 0
+        )
+
+        # 切片ノードから対象変数ノードへのエッジを追加（エッジラベルに切片の数値を表示）
         edges[[length(edges) + 1]] <- list(
-          from = "1",
+          from = node_id,
           to = p$lhs,
           label = sprintf("%.*f", digits, p$est),
           arrowhead = "vee",
@@ -204,6 +213,7 @@ semDiagram <- function(fitted_model,
       }
     }
   }
+
 
   # GraphVizコードの生成
   graph_code <- paste0(

@@ -94,7 +94,8 @@ semDiagram <- function(fitted_model,
       shape = "box",
       label = ov,
       fontname = fontname,
-      fontsize = node_fontsize
+      fontsize = node_fontsize,
+      margin = "0.05,0.05"
     )
   }
 
@@ -120,7 +121,7 @@ semDiagram <- function(fitted_model,
         "=~" = list(from = p$lhs, to = p$rhs, arrowhead = "vee"),
         "~"  = list(from = p$rhs, to = p$lhs, arrowhead = "vee"),
         "~~" = list(from = p$lhs, to = p$rhs,
-                    arrowhead = "none", arrowtail = "none",
+                    arrowhead = "vee", arrowtail = "vee",
                     dir = "both", style = "dashed")
       )
 
@@ -133,7 +134,8 @@ semDiagram <- function(fitted_model,
 
       # 曲率設定 (双方向関係の場合)
       if (p$op == "~~") {
-        edge_def$curvature <- curvature
+        edge_def$constraint <- FALSE
+        edge_def$dir <- "both"
       }
 
       edges[[length(edges) + 1]] <- edge_def
@@ -175,7 +177,6 @@ semDiagram <- function(fitted_model,
   if (show_intercepts) {
     ints <- params[params$op == "~1", ]
     if (nrow(ints) > 0) {
-      # 変更点①～③：
       nodes[["1"]] <- list(
         shape = "triangle",
         label = "1",
@@ -204,18 +205,15 @@ semDiagram <- function(fitted_model,
     }
   }
 
-
-  # ── GraphVizコードの生成 ──
+  # GraphVizコードの生成
   graph_code <- paste0(
     "digraph {\n",
     "  rankdir = ", layout, ";\n",
     "  graph [overlap = false, fontsize = ", node_fontsize,
     ", labelloc = 't', labeljust = 'c', label = ", fit_label, "];\n",
-    "  node [fontname = '", fontname, "', margin = 0.1];\n",
+    "  node [fontname = '", fontname, "', margin = 0.05];\n",
     "  edge [fontname = '", fontname, "', fontcolor = '#333333'];\n\n",
 
-    # ← ここを修正
-    # 元コード：names(nodes[[n]])[-1] / nodes[[n]][-1]
     paste(sapply(names(nodes), function(n) {
       attrs <- paste(
         names(nodes[[n]]),
@@ -228,7 +226,6 @@ semDiagram <- function(fitted_model,
       sprintf("  \"%s\" [%s];", n, attrs)
     }), collapse = "\n"), "\n\n",
 
-    # エッジ定義はそのまま
     paste(sapply(edges, function(e) {
       attrs <- paste(names(e)[-1:-2],
                      sapply(e[-1:-2], function(x) {
@@ -239,7 +236,6 @@ semDiagram <- function(fitted_model,
     }), collapse = "\n"), "\n",
     "}\n"
   )
-
 
   # グラフの描画
   DiagrammeR::grViz(graph_code)

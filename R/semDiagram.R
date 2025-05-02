@@ -1,50 +1,17 @@
-#' Visualize SEM Results as a Path Diagram
+#' Visualize SEM Results as a Path Diagram (optimized: no library()/install, fixed vapply)
 #'
-#' The semDiagram function visualizes structural equation modeling (SEM) results as a path diagram using the DiagrammeR package.
-#'
-#' @param fitted_model An object of class \code{lavaan}, representing the SEM model fit.
-#' @param digits An integer specifying the number of digits for parameter estimates in the diagram.
-#' @param standardized Logical. Whether to use standardized estimates. Defaults to \code{TRUE}.
-#' @param alpha Significance level for coloring edges based on p-values. Defaults to 0.05.
-#' @param min_width Minimum width of edges in the diagram. Defaults to 1.
-#' @param max_width Maximum width of edges in the diagram. Defaults to 5.
-#' @param pos_color Color for positive parameter estimates. Defaults to \code{"blue"}.
-#' @param neg_color Color for negative parameter estimates. Defaults to \code{"red"}.
-#' @param fontname Font family to use in the diagram. Defaults to \code{"Helvetica"}.
-#' @param node_fontsize Font size for node labels. Defaults to 11.
-#' @param edge_fontsize Font size for edge labels. Defaults to 9.
-#' @param show_residuals Logical. Whether to display residual variances as separate nodes. Defaults to \code{FALSE}.
-#' @param show_intercepts Logical. Whether to display intercepts as separate nodes. Defaults to \code{FALSE}.
-#' @param show_fit Logical. Whether to display model fit indices. Defaults to \code{TRUE}.
-#' @param layout Layout direction of the diagram. Options include \code{"LR"} (left-to-right) and \code{"TB"} (top-to-bottom). Defaults to \code{"LR"}.
-#' @param curvature Curvature of bidirectional edges (for covariances). Defaults to 0.3.
-#'
-#' @return A path diagram generated using the DiagrammeR package.
-#'
-#' @details
-#' This function creates a path diagram for an SEM model fitted with the \code{lavaan} package.
-#' It provides customizable options for edge thickness, colors, font sizes, as well as the ability to display residual variances,
-#' intercepts, and model fit indices.
-#'
-#' @examples
-#' \dontrun{
-#' library(lavaan)
-#' library(DiagrammeR)
-#'
-#' # Example SEM model
-#' model <- '
-#'   Latent1 =~ x1 + x2 + x3
-#'   Latent2 =~ y1 + y2 + y3
-#'   Latent2 ~ Latent1
-#' '
-#' fit <- sem(model, data = HolzingerSwineford1939)
-#'
-#' # Visualize the SEM results
-#' semDiagram(fitted_model = fit, standardized = TRUE, show_fit = TRUE)
-#' }
-#'
-#' @seealso \code{\link[lavaan]{lavaan}}, \code{\link[DiagrammeR]{grViz}}
-#'
+#' @param fitted_model An object of class lavaan
+#' @param digits Integer: number of digits for estimates
+#' @param standardized Logical: use standardized estimates?
+#' @param alpha Numeric: significance threshold for edge transparency
+#' @param min_width Numeric: minimum edge width
+#' @param max_width Numeric: maximum edge width
+#' @param pos_color,neg_color Character: colors for positive/negative estimates
+#' @param fontname Character: font family for labels
+#' @param node_fontsize,edge_fontsize Numeric: font sizes
+#' @param show_residuals,show_intercepts,show_fit Logical: whether to show residuals/intercepts/fit indices
+#' @param layout Character: "LR" or "TB"
+#' @param curvature Numeric: curvature for bidirectional edges
 #' @export
 semDiagram <- function(fitted_model,
                        digits = 3,
@@ -61,27 +28,29 @@ semDiagram <- function(fitted_model,
                        layout = "LR",
                        curvature = 0.3) {
 
-  # パッケージチェックとインストール
+  # 1. Check that fitted_model is lavaan object
   if (!inherits(fitted_model, "lavaan")) {
-    stop("The argument 'fitted_model' must be a lavaan model object.")
+    stop("`fitted_model` must be a lavaan model object.")
   }
 
-  required_pkgs <- c("scales", "DiagrammeR", "lavaan")
-  missing_pkgs <- setdiff(required_pkgs, rownames(installed.packages()))
-  if (length(missing_pkgs) > 0) {
-    message("Installing missing packages: ", paste(missing_pkgs, collapse = ", "))
-    install.packages(missing_pkgs)
-  }
-  invisible(lapply(required_pkgs, library, character.only = TRUE))
+  # 2. Dependency check: no install or library calls at runtime
+  pkgs <- c("scales", "DiagrammeR", "lavaan")
+  invisible(lapply(pkgs, function(pkg) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      stop(sprintf("Package '%s' is required but not installed. Please install it via install.packages('%s').", pkg, pkg))
+    }
+  }))
 
-  # パラメータ推定値の取得
-  params <- parameterEstimates(fitted_model, standardized = standardized)
+  # 3. Retrieve parameter estimates
+  params <- lavaan::parameterEstimates(fitted_model, standardized = standardized)
 
-  # 適合度指標の取得
-  fit <- fitMeasures(fitted_model,
-                     c("pvalue", "srmr", "rmsea", "gfi", "agfi", "nfi", "cfi", "aic", "bic"))
+  # 4. Retrieve fit measures
+  fit <- lavaan::fitMeasures(fitted_model,
+                             c("pvalue","srmr","rmsea",
+                               "gfi","agfi","nfi","cfi",
+                               "aic","bic"))
 
-  # 適合度指標の色付け関数
+  # 5. Colorizing function for fit indices
   colorize <- function(value, threshold, inverse = FALSE) {
     if (is.na(value)) return("gray50")
     if (inverse) {
@@ -91,82 +60,67 @@ semDiagram <- function(fitted_model,
     }
   }
 
-  # 適合度ラベルの作成
+  # 6. Build fit label
   if (show_fit) {
     p_col    <- colorize(fit["pvalue"], 0.05)
-    s_col    <- colorize(fit["srmr"], 0.08, inverse = TRUE)
-    r_col    <- colorize(fit["rmsea"], 0.08, inverse = TRUE)
-    gfi_col  <- colorize(fit["gfi"], 0.90)
-    agfi_col <- colorize(fit["agfi"], 0.90)
-    nfi_col  <- colorize(fit["nfi"], 0.90)
-    cfi_col  <- colorize(fit["cfi"], 0.90)
+    s_col    <- colorize(fit["srmr"],   0.08, inverse = TRUE)
+    r_col    <- colorize(fit["rmsea"],  0.08, inverse = TRUE)
+    gfi_col  <- colorize(fit["gfi"],    0.90)
+    agfi_col <- colorize(fit["agfi"],   0.90)
+    nfi_col  <- colorize(fit["nfi"],    0.90)
+    cfi_col  <- colorize(fit["cfi"],    0.90)
 
     fit_label <- paste0(
       "<<font point-size='12'>",
-      sprintf("<font color='%s'>p = %.3f</font>", p_col, fit["pvalue"]), " | ",
-      sprintf("<font color='%s'>SRMR = %.3f</font>", s_col, fit["srmr"]), " | ",
-      sprintf("<font color='%s'>RMSEA = %.3f</font>", r_col, fit["rmsea"]), " | ",
-      sprintf("AIC = %.1f", fit["aic"]), " | ",
-      sprintf("BIC = %.1f", fit["bic"]), "<br/>",
-      sprintf("<font color='%s'>GFI = %.3f</font>", gfi_col, fit["gfi"]), " | ",
-      sprintf("<font color='%s'>AGFI = %.3f</font>", agfi_col, fit["agfi"]), " | ",
-      sprintf("<font color='%s'>NFI = %.3f</font>", nfi_col, fit["nfi"]), " | ",
-      sprintf("<font color='%s'>CFI = %.3f</font>", cfi_col, fit["cfi"]),
+      sprintf("<font color='%s'>p = %.3f</font>",   p_col,    fit["pvalue"]), " | ",
+      sprintf("<font color='%s'>SRMR = %.3f</font>", s_col,    fit["srmr"]),   " | ",
+      sprintf("<font color='%s'>RMSEA = %.3f</font>",r_col,    fit["rmsea"]),  " | ",
+      sprintf("AIC = %.1f", fit["aic"]),             " | ",
+      sprintf("BIC = %.1f", fit["bic"]),             "<br/>",
+      sprintf("<font color='%s'>GFI = %.3f</font>",  gfi_col,  fit["gfi"]),    " | ",
+      sprintf("<font color='%s'>AGFI = %.3f</font>", agfi_col, fit["agfi"]),   " | ",
+      sprintf("<font color='%s'>NFI = %.3f</font>",  nfi_col,  fit["nfi"]),    " | ",
+      sprintf("<font color='%s'>CFI = %.3f</font>",  cfi_col,  fit["cfi"]),
       "</font>>"
     )
   } else {
     fit_label <- ""
   }
 
-  # ノードの定義
-  # まず、各変数名を文字列として扱う
-  latent_vars <- unique(as.character(params$lhs[params$op == "=~"]))
+  # 7. Define nodes
+  latent_vars   <- unique(as.character(params$lhs[params$op == "=~"]))
   observed_vars <- unique(as.character(c(params$lhs, params$rhs)))
-
-  # "1"（およびもしあれば空文字列）や latent_vars を除外する
   observed_vars <- setdiff(observed_vars, c(latent_vars, "1", ""))
 
   nodes <- list()
-
-  # 潜在変数
   for (lv in latent_vars) {
     nodes[[lv]] <- list(
-      shape = "ellipse",
-      label = lv,
-      style = "filled",
+      shape     = "ellipse",
+      label     = lv,
+      style     = "filled",
       fillcolor = "#F0F0F0",
-      fontname = fontname,
-      fontsize = node_fontsize
+      fontname  = fontname,
+      fontsize  = node_fontsize
     )
   }
-
-  # 観測変数
   for (ov in observed_vars) {
     nodes[[ov]] <- list(
-      shape = "box",
-      label = ov,
+      shape    = "box",
+      label    = ov,
       fontname = fontname,
       fontsize = node_fontsize
     )
   }
 
-  # エッジの定義
+  # 8. Define edges
   edges <- list()
-
   for (i in seq_len(nrow(params))) {
     p <- params[i, ]
-
-    if (p$op %in% c("=~", "~", "~~") && p$lhs != p$rhs) {
-      # エッジの太さ (標準化係数の絶対値に基づく)
-      pen <- abs(p$est) * (max_width - min_width) + min_width
-
-      # 透明度 (有意性に基づく)
+    if (p$op %in% c("=~","~","~~") && p$lhs != p$rhs) {
+      pen        <- abs(p$est)*(max_width-min_width)+min_width
       alpha_edge <- ifelse(p$pvalue < alpha, 1, 0.3)
+      col        <- scales::alpha(ifelse(p$est >= 0, pos_color, neg_color), alpha_edge)
 
-      # 色 (係数の符号に基づく)
-      col <- scales::alpha(ifelse(p$est >= 0, pos_color, neg_color), alpha_edge)
-
-      # エッジタイプごとの設定
       edge_def <- switch(
         p$op,
         "=~" = list(from = p$lhs, to = p$rhs, arrowhead = "vee"),
@@ -175,86 +129,71 @@ semDiagram <- function(fitted_model,
                     arrowhead = "vee", arrowtail = "vee",
                     dir = "both", style = "dashed")
       )
-
-      # 共通設定
-      edge_def$label <- sprintf("%.*f", digits, p$est)
+      edge_def$label    <- sprintf("%.*f", digits, p$est)
       edge_def$penwidth <- pen
-      edge_def$color <- col
+      edge_def$color    <- col
       edge_def$fontsize <- edge_fontsize
       edge_def$fontname <- fontname
-
-      # 曲率設定 (双方向関係の場合)
       if (p$op == "~~") {
         edge_def$constraint <- FALSE
-        edge_def$dir <- "both"
+        edge_def$dir        <- "both"
       }
-
       edges[[length(edges) + 1]] <- edge_def
     }
   }
 
-  # 残差分散の表示
+  # 9. Add residual nodes
   if (show_residuals) {
     resids <- params[params$op == "~~" & params$lhs == params$rhs, ]
     for (i in seq_len(nrow(resids))) {
-      r <- resids[i, ]
+      r       <- resids[i, ]
       node_id <- paste0("res_", r$lhs)
-
-      # 残差ノードの追加
       nodes[[node_id]] <- list(
-        shape = "circle",
-        label = paste0("ε_", r$lhs),
+        shape    = "circle",
+        label    = paste0("ε_", r$lhs),
         fontname = fontname,
         fontsize = node_fontsize - 1,
-        width = 0.5,
-        height = 0.5
+        width    = 0.5,
+        height   = 0.5
       )
-
-      # 残差エッジの追加
       edges[[length(edges) + 1]] <- list(
-        from = node_id,
-        to = r$lhs,
-        label = sprintf("%.*f", digits, r$est),
-        arrowhead = "vee",
-        style = "dotted",
+        from     = node_id,
+        to       = r$lhs,
+        label    = sprintf("%.*f", digits, r$est),
+        arrowhead= "vee",
+        style    = "dotted",
         penwidth = 1,
-        color = "gray50",
+        color    = "gray50",
         fontsize = edge_fontsize
       )
     }
   }
 
-  # 切片の表示
-  # 切片の表示（個別表示版: ノードは定型ラベル「1」、エッジに推定値を表示）
+  # 10. Add intercept nodes
   if (show_intercepts) {
     ints <- params[params$op == "~1", ]
     if (nrow(ints) > 0) {
       for (i in seq_len(nrow(ints))) {
-        p <- ints[i, ]
-        # 各切片ノードのIDはユニークになるように "int_" + 変数名
+        p       <- ints[i, ]
         node_id <- paste0("int_", p$lhs)
-
-        # 個別の切片ノードを作成（ラベルは定型ラベル "1"）
         nodes[[node_id]] <- list(
-          shape = "triangle",
-          label = "1",
-          style = "filled",
+          shape     = "triangle",
+          label     = "1",
+          style     = "filled",
           fillcolor = "#DDDDDD",
-          fontname = fontname,
-          fontsize = node_fontsize * 0.5,
-          width = 0,
-          height = 0
+          fontname  = fontname,
+          fontsize  = node_fontsize * 0.5,
+          width     = 0,
+          height    = 0
         )
-
-        # 切片ノードから対象変数ノードへのエッジを追加（エッジラベルに切片の数値を表示）
         edges[[length(edges) + 1]] <- list(
-          from = node_id,
-          to = p$lhs,
-          label = sprintf("%.*f", digits, p$est),
-          arrowhead = "vee",
-          style = "solid",
+          from     = node_id,
+          to       = p$lhs,
+          label    = sprintf("%.*f", digits, p$est),
+          arrowhead= "vee",
+          style    = "solid",
           penwidth = 1,
-          color = "gray50",
+          color    = "gray50",
           fontsize = edge_fontsize,
           fontname = fontname
         )
@@ -262,39 +201,34 @@ semDiagram <- function(fitted_model,
     }
   }
 
-
-  # GraphVizコードの生成
+  # 11. Generate GraphViz code
   graph_code <- paste0(
     "digraph {\n",
     "  rankdir = ", layout, ";\n",
-    "  graph [overlap = false, fontsize = ", node_fontsize,
-    ", labelloc = 't', labeljust = 'c', label = ", fit_label, "];\n",
-    "  node [fontname = '", fontname, "', margin = 0.05];\n",
-    "  edge [fontname = '", fontname, "', fontcolor = '#333333'];\n\n",
-
+    "  graph [overlap=false, labelloc='t', labeljust='c', label=", fit_label, "];\n",
+    "  node [fontname='", fontname, "', margin=0.05];\n",
+    "  edge [fontname='", fontname, "', fontcolor='#333333'];\n\n",
     paste(sapply(names(nodes), function(n) {
       attrs <- paste(
         names(nodes[[n]]),
-        sapply(nodes[[n]], function(x) {
-          if (is.numeric(x)) x else paste0("\"", x, "\"")
-        }),
+        vapply(nodes[[n]], function(x) if (is.numeric(x)) as.character(x) else paste0("\"", x, "\""), character(1)),
         sep = "=",
         collapse = ", "
       )
       sprintf("  \"%s\" [%s];", n, attrs)
     }), collapse = "\n"), "\n\n",
-
     paste(sapply(edges, function(e) {
-      attrs <- paste(names(e)[-1:-2],
-                     sapply(e[-1:-2], function(x) {
-                       if (is.numeric(x)) x else paste0("\"", x, "\"")
-                     }),
-                     sep = "=", collapse = ", ")
+      attrs <- paste(
+        names(e)[-1:-2],
+        vapply(e[-1:-2], function(x) if (is.numeric(x)) as.character(x) else paste0("\"", x, "\""), character(1)),
+        sep = "=",
+        collapse = ", "
+      )
       sprintf("  \"%s\" -> \"%s\" [%s];", e$from, e$to, attrs)
     }), collapse = "\n"), "\n",
     "}\n"
   )
 
-  # グラフの描画
+  # 12. Render graph
   DiagrammeR::grViz(graph_code)
 }

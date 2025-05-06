@@ -51,6 +51,7 @@ semDiagram <- function(fitted_model,
 
   # 4. Retrieve fit measures
   fit <- lavaan::fitMeasures(fitted_model, c("pvalue", "srmr", "rmsea", "gfi", "agfi", "nfi", "cfi", "aic", "bic"))
+  n_obs <- lavaan::lavInspect(fitted_model, "nobs")   # ← 追加
 
   # 5. Colorizing function for fit indices
   colorize <- function(value, threshold, inverse = FALSE) {
@@ -74,6 +75,7 @@ semDiagram <- function(fitted_model,
 
     fit_label <- paste0(
       "<<font point-size='12'>",
+      sprintf("N = %d", n_obs), " | ",                         # ← ここを追加
       sprintf("<font color='%s'>p = %.3f</font>",   p_col,    fit["pvalue"]), " | ",
       sprintf("<font color='%s'>SRMR = %.3f</font>", s_col,    fit["srmr"]),   " | ",
       sprintf("<font color='%s'>RMSEA = %.3f</font>",r_col,    fit["rmsea"]),  " | ",

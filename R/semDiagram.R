@@ -1,3 +1,4 @@
+
 #' Visualize SEM Results as a Path Diagram (optimized: no library()/install, fixed vapply)
 #'
 #' @param fitted_model An object of class lavaan
@@ -11,6 +12,7 @@
 #' @param node_fontsize,edge_fontsize Numeric: font sizes
 #' @param show_residuals,show_intercepts,show_fit Logical: whether to show residuals/intercepts/fit indices
 #' @param layout Character: "LR" or "TB"
+#' @param ratio Character or numeric: GraphViz 'ratio' attribute (e.g., "fill", numeric aspect ratio)
 #' @param curvature Numeric: curvature for bidirectional edges
 #' @export
 semDiagram <- function(fitted_model,
@@ -28,6 +30,7 @@ semDiagram <- function(fitted_model,
                        show_intercepts = FALSE,
                        show_fit = TRUE,
                        layout = "LR",
+                       ratio = "fill",
                        curvature = 0.3) {
 
   # 1. Check that fitted_model is lavaan object
@@ -53,17 +56,9 @@ semDiagram <- function(fitted_model,
   colorize <- function(value, threshold, inverse = FALSE) {
     if (is.na(value)) return("gray50")
     if (inverse) {
-      if (value > threshold) {
-        "red"
-      } else {
-        "gray20"
-      }
+      if (value > threshold) "red" else "gray20"
     } else {
-      if (value <= threshold) {
-        "red"
-      } else {
-        "gray20"
-      }
+      if (value <= threshold) "red" else "gray20"
     }
   }
 
@@ -214,7 +209,7 @@ semDiagram <- function(fitted_model,
   graph_code <- paste0(
     "digraph {\n",
     "  rankdir = ", layout, ";\n",
-    "  graph [overlap=false, labelloc='t', labeljust='c', label=", fit_label, "];\n",
+    "  graph [overlap=false, labelloc='t', labeljust='c', label=", fit_label, ", ratio=", ratio, "];\n",
     "  node [fontname='", fontname, "', margin=0.05];\n",
     "  edge [fontname='", fontname, "', fontcolor='#333333'];\n\n",
     paste(sapply(names(nodes), function(n) {

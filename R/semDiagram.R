@@ -17,8 +17,10 @@ semDiagram <- function(fitted_model,
                        digits = 3,
                        standardized = TRUE,
                        alpha = 0.05,
-                       min_width = 1, max_width = 5,
-                       pos_color = "blue", neg_color = "red",
+                       min_width = 1,
+                       max_width = 5,
+                       pos_color = "blue",
+                       neg_color = "red",
                        fontname = "Helvetica",
                        node_fontsize = 11,
                        edge_fontsize = 9,
@@ -45,18 +47,23 @@ semDiagram <- function(fitted_model,
   params <- lavaan::parameterEstimates(fitted_model, standardized = standardized)
 
   # 4. Retrieve fit measures
-  fit <- lavaan::fitMeasures(fitted_model,
-                             c("pvalue","srmr","rmsea",
-                               "gfi","agfi","nfi","cfi",
-                               "aic","bic"))
+  fit <- lavaan::fitMeasures(fitted_model, c("pvalue", "srmr", "rmsea", "gfi", "agfi", "nfi", "cfi", "aic", "bic"))
 
   # 5. Colorizing function for fit indices
   colorize <- function(value, threshold, inverse = FALSE) {
     if (is.na(value)) return("gray50")
     if (inverse) {
-      if (value > threshold) "red" else "gray20"
+      if (value > threshold) {
+        "red"
+      } else {
+        "gray20"
+      }
     } else {
-      if (value <= threshold) "red" else "gray20"
+      if (value <= threshold) {
+        "red"
+      } else {
+        "gray20"
+      }
     }
   }
 
@@ -116,8 +123,8 @@ semDiagram <- function(fitted_model,
   edges <- list()
   for (i in seq_len(nrow(params))) {
     p <- params[i, ]
-    if (p$op %in% c("=~","~","~~") && p$lhs != p$rhs) {
-      pen        <- abs(p$est)*(max_width-min_width)+min_width
+    if (p$op %in% c("=~", "~", "~~") && p$lhs != p$rhs) {
+      pen        <- abs(p$est) * (max_width - min_width) + min_width
       alpha_edge <- ifelse(p$pvalue < alpha, 1, 0.3)
       col        <- scales::alpha(ifelse(p$est >= 0, pos_color, neg_color), alpha_edge)
 
@@ -129,7 +136,9 @@ semDiagram <- function(fitted_model,
                     arrowhead = "vee", arrowtail = "vee",
                     dir = "both", style = "dashed")
       )
-      edge_def$label    <- sprintf("%.*f", digits, p$est)
+      # Use standardized estimate if requested
+      value <- if (standardized) p$std.all else p$est
+      edge_def$label    <- sprintf("%.*f", digits, value)
       edge_def$penwidth <- pen
       edge_def$color    <- col
       edge_def$fontsize <- edge_fontsize

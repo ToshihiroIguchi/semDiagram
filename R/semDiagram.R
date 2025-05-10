@@ -4,6 +4,7 @@
 #' @param digits          Number of digits for printed estimates
 #' @param standardized    If TRUE, use fully standardized coefficients (std.all) for labels & widths; otherwise raw estimates
 #' @param alpha           p-value threshold for edge opacity
+#' @param low_alpha       Transparency for non-significant edges and NA p-values
 #' @param min_width       Minimum edge width
 #' @param max_width       Maximum edge width
 #' @param pos_color       Color for positive edges
@@ -22,6 +23,7 @@ semDiagram <- function(fitted_model,
                        digits          = 3,
                        standardized    = TRUE,
                        alpha           = 0.05,
+                       low_alpha       = 0.2,
                        min_width       = 1,
                        max_width       = 5,
                        pos_color       = "blue",
@@ -36,7 +38,7 @@ semDiagram <- function(fitted_model,
                        ratio           = "fill",
                        curvature       = 0.3) {
 
-  # Helper: create an RGBA color string, guarding against NA/out‐of‐range alpha
+  # Helper: create an RGBA color string, guarding against NA/out‐of-range alpha
   alpha_color <- function(col, alpha_val) {
     if (is.na(alpha_val) || alpha_val < 0 || alpha_val > 1) {
       alpha_val <- 1
@@ -153,11 +155,11 @@ semDiagram <- function(fitted_model,
 
       # Determine edge opacity
       alpha_edge <- if (is.na(p$pvalue)) {
-        0.3
+        low_alpha
       } else if (p$pvalue < alpha) {
         1
       } else {
-        0.3
+        low_alpha
       }
 
       # Determine edge color with alpha

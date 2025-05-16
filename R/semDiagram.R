@@ -83,7 +83,12 @@ semDiagram <- function(
   ## ---------- 3. Edge-width scaling ----------
   edge_rows <- params[params$op %in% c("=~","~","~~") & params$lhs!=params$rhs, ]
   vals <- abs(edge_rows[[scale_col]]); vals <- vals[!is.na(vals)]
-  max_abs <- if (length(vals)==0 || !is.finite(max(vals))) 1 else max(vals)
+  # When standardized, fix max_abs to 1 so scaling respects absolute bounds
+  if (standardized) {
+    max_abs <- 1
+  } else {
+    max_abs <- if (length(vals)==0 || !is.finite(max(vals))) 1 else max(vals)
+  }
 
   ## ---------- 4. Color helper ----------
   colorize_fit <- function(v, thr, inv = FALSE) {
@@ -215,17 +220,8 @@ semDiagram <- function(
   radial_opts <- paste(radial_opts, collapse = ", ")
 
   graph_code <- sprintf(
-    "digraph {
-  rankdir=%s;
-  graph [layout=%s%s%s, overlap=false,
-         labelloc=\"t\", labeljust=\"c\", label=%s, ratio=%s];
-  node  [fontname=\"%s\", margin=0.05];
-  edge  [fontname=\"%s\", fontcolor=\"#333333\"];
-
-%s
-
-%s
-}", layout, engine,
+    "digraph {\n  rankdir=%s;\n  graph [layout=%s%s%s, overlap=false,\n         labelloc=\"t\", labeljust=\"c\", label=%s, ratio=%s];\n  node  [fontname=\"%s\", margin=0.05];\n  edge  [fontname=\"%s\", fontcolor=\"#333333\"];\n\n%s\n\n%s\n}",
+    layout, engine,
     if (nchar(radial_opts)) ", " else "", radial_opts,
     top_label, ratio,
     fontname, fontname,
